@@ -1,4 +1,5 @@
-from flask import Flask, request, redirect, url_for, render_template_string, session
+from flask import Flask, request, redirect, url_for, render_template_string, session, flash
+
 
 app = Flask(__name__)
 app.secret_key = 'bvfdhfvla'  # Use a strong, random value in production
@@ -14,6 +15,7 @@ users = {
     }
 }
 
+
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html lang="en">
@@ -25,13 +27,24 @@ HTML_TEMPLATE = '''
         body { font-family: Arial, sans-serif; padding: 40px; }
         input, button { padding: 10px; margin-top: 10px; }
         form { margin-bottom: 20px; }
+        .message { color: red; margin-bottom: 20px; }
     </style>
 </head>
 <body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="message">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
     {{content|safe}}
 </body>
 </html>
 '''
+
 
 @app.route('/')
 def index():
@@ -55,29 +68,32 @@ def index():
         return render_template_string(HTML_TEMPLATE, content='''
         <h1>Login</h1>
         <form action="/login" method="POST">
-            <input type="password" name="password" placeholder="Password">
+            <input type="text" name="password" placeholder="Password">
             <button type="submit">Login as Admin</button>
         </form>
         ''')
 
+
 @app.route('/login', methods=['POST'])
 def login():
     password = request.form['password']
-    print(users['admin']['password'])
     if password == users['admin']['password']:
         session['authenticated'] = True
         return redirect(url_for('index'))
+    flash('Login failed. Incorrect password.')
     return redirect(url_for('index'))
+
 
 @app.route('/logout')
 def logout():
     session.pop('authenticated', None)
     return redirect(url_for('index'))
 
+
 @app.route('/update-password', methods=['GET', 'POST'])
 def update_password():
     if 'authenticated' not in session:
-        print('not authenticated')
+        flash('Update failed. You are not authenticated.')
         return redirect(url_for('index'))
     
     if request.method == 'POST':
@@ -87,10 +103,14 @@ def update_password():
         # Access query parameters for GET requests
         new_password = request.args.get('new_password', '')
     
-    users['admin']['password'] = new_password
-    print(f"New password: {new_password}")
+    if new_password:
+        users['admin']['password'] = new_password
+        print(f"New password: {new_password}")
+        flash('Password changed successfully.')
+    else:
+        flash('Update failed. No password provided.')
     return redirect(url_for('index'))
-
+    
 
 @app.route('/update-username', methods=['POST'])
 def update_username():
@@ -98,7 +118,6 @@ def update_username():
         return redirect(url_for('index'))
     
     new_username = request.form.get('new_username', '')
-    # XSS vulnerability if any JavaScript is passed as a new username:
     users['admin']['username'] = new_username
     return redirect(url_for('index'))
 
