@@ -45,12 +45,28 @@ HTML_TEMPLATE = '''
 </html>
 '''
 
+@app.route('/welcome')
+def welcome():
+    if 'authenticated' in session:
+        content_html = f'''
+            <h1>Welcome, {users['admin']['username']}</h1>
+            '''
+        return render_template_string(HTML_TEMPLATE, content=content_html)
+    else:
+        return render_template_string(HTML_TEMPLATE, content='''
+        <h1>Login</h1>
+        <form action="/login" method="POST">
+            <input type="text" name="password" placeholder="Password">
+            <button type="submit">Login as Admin</button>
+        </form>
+        ''')
 
 @app.route('/')
 def index():
     if 'authenticated' in session:
         content_html = f'''
-            <h1>Welcome, {users['admin']['username']}</h1>
+            <h1>Welcome!</h1>
+            <a href="/welcome" class="button-style">HomePage</a>
             <p>Change your password or username below:</p>
             <form action="/update-password" method="POST">
                 <input type="text" name="new_password" placeholder="Enter new password">
@@ -112,14 +128,20 @@ def update_password():
     return redirect(url_for('index'))
     
 
-@app.route('/update-username', methods=['POST'])
+@app.route('/update-username', methods=['GET', 'POST'])
 def update_username():
     if 'authenticated' not in session:
         return redirect(url_for('index'))
     
-    new_username = request.form.get('new_username', '')
+    if request.method == 'POST':
+        # Access form data for POST requests
+        new_username = request.form.get('new_username', '')
+    else:
+        # Access query parameters for GET requests
+        new_username = request.args.get('new_username', '')
+    
     users['admin']['username'] = new_username
-    return redirect(url_for('index'))
+    return redirect(url_for('welcome'))
 
 if __name__ == '__main__':
     app.run(debug=True)
